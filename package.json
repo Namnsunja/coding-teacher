@@ -1,66 +1,13 @@
-const express = require('express');
-const cors = require('cors');
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// 1. Setup
-app.use(cors());
-app.use(express.json());
-
-// 2. Helper Functions (Required so the app doesn't crash)
-const deepseekSystemPrompt = (type, lang) => `You are a ${type} tutor in ${lang}.`;
-const safeJson = (str) => { try { return JSON.parse(str); } catch (e) { return null; } };
-
-// NOTE: Ensure your actual AI calling logic is inside these two functions
-const callDeepSeek = async (msgs) => { /* Your DeepSeek Logic */ return "AI Response"; };
-const callGemini = async (prompt) => { /* Your Gemini Logic */ return "Visual Help Response"; };
-
-// 3. The Fixed Routes
-app.post("/coding", async (req, res) => {
-  try {
-    const { message, history = [], language = "English", codeLanguage = "JavaScript" } = req.body;
-    
-    // FIX: These backticks (`) are required for multi-line text
-    const system = `
-${deepseekSystemPrompt("coding", language)}
-- Teach ${codeLanguage}.
-- Make it a game.
-- Short, one-step lesson.
-`;
-
-    const messages = [{ role: "system", content: system }, ...history, { role: "user", content: message }];
-    const content = await callDeepSeek(messages);
-    res.json(safeJson(content) || { lesson: content });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post("/notes", async (req, res) => {
-  try {
-    const { topic, classLevel = "school", language = "English" } = req.body;
-    
-    // FIX: Backticks added here too
-    const prompt = `
-Make study material for: ${topic}
-Level: ${classLevel}
-Language: ${language}
-`;
-
-    const messages = [{ role: "system", content: deepseekSystemPrompt("notes", language) }, { role: "user", content: prompt }];
-    const content = await callDeepSeek(messages);
-    res.json(safeJson(content) || { short_note: content });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post("/visual", async (req, res) => {
-  try {
-    const { topic } = req.body;
-    const prompt = `Create a visual explanation for: ${topic}`;
-    const text = await callGemini(prompt);
-    res.json({ result: text });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// 4. Start Server
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+{
+  "name": "micromind-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
