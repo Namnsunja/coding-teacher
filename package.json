@@ -1,16 +1,56 @@
-{
-  "name": "edu-ai-backend",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": "22.x"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2"
-  }
-}
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// 1. Setup (The "Engine")
+app.use(cors());
+app.use(express.json());
+
+// 2. Helpers (Placeholders so it doesn't crash)
+const deepseekSystemPrompt = (type, lang) => `You are an expert ${type} tutor in ${lang}.`;
+const safeJson = (str) => { try { return JSON.parse(str); } catch (e) { return null; } };
+
+// --- Add your actual callDeepSeek and callGemini logic below ---
+const callDeepSeek = async (msgs, model) => "DeepSeek response placeholder";
+const callGemini = async (prompt, model) => "Gemini response placeholder";
+
+
+// 3. The Routes
+app.post("/coding", async (req, res) => {
+  try {
+    const { message, history = [], language = "English", codeLanguage = "JavaScript" } = req.body;
+    const system = `
+${deepseekSystemPrompt("coding", language)}
+- Teach ${codeLanguage}.
+- One tiny step.
+`;
+    const messages = [{ role: "system", content: system }, ...history, { role: "user", content: message }];
+    const content = await callDeepSeek(messages, "deepseek-chat");
+    res.json(safeJson(content) || { lesson: content });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/notes", async (req, res) => {
+  try {
+    const { topic, language = "English" } = req.body;
+    const prompt = `Make study notes for: ${topic} in ${language}`;
+    const messages = [{ role: "system", content: deepseekSystemPrompt("notes", language) }, { role: "user", content: prompt }];
+    const content = await callDeepSeek(messages, "deepseek-chat");
+    res.json(safeJson(content) || { notes: content });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/visual", async (req, res) => {
+  try {
+    const { topic } = req.body;
+    const prompt = `Create a visual explanation for: ${topic}`;
+    const text = await callGemini(prompt, "gemini-2.0-flash");
+    res.json({ result: text });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 4. Start the Server
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
