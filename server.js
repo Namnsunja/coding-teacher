@@ -1,3 +1,18 @@
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// --- HELPER FUNCTIONS ---
+// IMPORTANT: Ensure your helper functions (deepseekSystemPrompt, callDeepSeek, etc.) 
+// are defined here or imported so they don't cause a "not defined" error.
+
 /* 2) Coding teacher — Duolingo style */
 app.post("/coding", async (req, res) => {
   try {
@@ -7,7 +22,6 @@ app.post("/coding", async (req, res) => {
       return res.status(400).json({ error: "message is required" });
     }
 
-    // FIX: Wrapped the string in backticks
     const system = `
 ${deepseekSystemPrompt("coding", language)}
 
@@ -53,7 +67,6 @@ app.post("/notes", async (req, res) => {
       return res.status(400).json({ error: "topic is required" });
     }
 
-    // FIX: Wrapped the string in backticks
     const prompt = `
 Make study material for topic: ${topic}
 Class level: ${classLevel}
@@ -97,7 +110,6 @@ app.post("/visual", async (req, res) => {
       return res.status(400).json({ error: "topic is required" });
     }
 
-    // FIX: Wrapped the string in backticks
     const prompt = `
 Create a clear visual study explanation for: ${topic}
 
@@ -119,7 +131,7 @@ Return:
   }
 });
 
+// Start Server
 app.listen(PORT, "0.0.0.0", () => {
-  // FIX: Wrapped the console log message in backticks
   console.log(`Server running on port ${PORT}`);
 });
