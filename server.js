@@ -7,7 +7,8 @@ app.post("/coding", async (req, res) => {
       return res.status(400).json({ error: "message is required" });
     }
 
-    const system = 
+    // FIX: Wrapped the string in backticks
+    const system = `
 ${deepseekSystemPrompt("coding", language)}
 
 Special focus:
@@ -16,7 +17,7 @@ Special focus:
 - Short lesson.
 - One tiny step.
 - Friendly teacher voice.
-;
+`;
 
     const messages = [
       { role: "system", content: system },
@@ -52,7 +53,8 @@ app.post("/notes", async (req, res) => {
       return res.status(400).json({ error: "topic is required" });
     }
 
-    const prompt = 
+    // FIX: Wrapped the string in backticks
+    const prompt = `
 Make study material for topic: ${topic}
 Class level: ${classLevel}
 
@@ -62,7 +64,7 @@ Need:
 - likely exam questions
 - one-pager revision notes
 - easy and memorable
-;
+`;
 
     const messages = [
       { role: "system", content: deepseekSystemPrompt("notes", language) },
@@ -95,7 +97,8 @@ app.post("/visual", async (req, res) => {
       return res.status(400).json({ error: "topic is required" });
     }
 
-    const prompt = 
+    // FIX: Wrapped the string in backticks
+    const prompt = `
 Create a clear visual study explanation for: ${topic}
 
 Style: ${style}
@@ -107,7 +110,7 @@ Return:
 - simple diagram idea
 - memory trick
 - emoji-friendly layout
-;
+`;
 
     const text = await callGemini(prompt, "gemini-2.5-flash");
     res.json({ result: text });
@@ -117,5 +120,6 @@ Return:
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(Server running on port ${PORT});
+  // FIX: Wrapped the console log message in backticks
+  console.log(`Server running on port ${PORT}`);
 });
