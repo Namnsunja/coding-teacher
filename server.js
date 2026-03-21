@@ -9,6 +9,11 @@ app.get("/", (req, res) => {
   res.send("Micromind API running");
 });
 
+// ✅ Health check (important for Render)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 app.post("/api/ask", async (req, res) => {
   const { mode, message } = req.body;
 
