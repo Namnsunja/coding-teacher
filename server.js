@@ -18,9 +18,11 @@ app.get("/test", (req, res) => {
 });
 
 app.post("/api/ask", async (req, res) => {
-  const { mode, message } = req.body;
+  const message = req.body.message || "";
+  const mode = (req.body.mode || "").toLowerCase().trim();
 
   try {
+    // 💬 CHAT + CODE
     if (mode === "chat" || mode === "code") {
       const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
         method: "POST",
@@ -35,9 +37,12 @@ app.post("/api/ask", async (req, res) => {
       });
 
       const data = await response.json();
-      return res.json({ reply: data.choices?.[0]?.message?.content || "No reply from DeepSeek" });
+      return res.json({
+        reply: data.choices?.[0]?.message?.content || "No reply from DeepSeek"
+      });
     }
 
+    // 🎨 VISUAL
     if (mode === "visual") {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -56,9 +61,15 @@ app.post("/api/ask", async (req, res) => {
       });
     }
 
-    res.status(400).json({ error: "Invalid mode" });
+    // ❌ Invalid mode
+    return res.status(400).json({
+      error: "Invalid mode",
+      allowed: ["chat", "code", "visual"],
+      received: mode || "empty"
+    });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 });
 
