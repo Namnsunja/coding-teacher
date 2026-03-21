@@ -1,5 +1,9 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -7,8 +11,8 @@ app.use(express.json({ limit: "1mb" }));
 
 const PORT = process.env.PORT || 10000;
 
-/* 🔑 PUT YOUR GEMINI KEY HERE */
-const GEMINI_API_KEY = "AIzaSyDtSEeKs_e5uHjTRQDnCd0FLVAlOw2gZIU";
+// Use environment variable for the key
+const GEMINI_API_KEY = process.env.AIzaSyDtSEeKs_e5uHjTRQDnCd0FLVAlOw2gZIU;
 const GEMINI_MODEL = "gemini-1.5-flash";
 
 /* ---------- GEMINI CALL ---------- */
@@ -31,94 +35,45 @@ async function callGemini(prompt) {
     throw new Error(data?.error?.message || "Gemini failed");
   }
 
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No reply";
+  return data?.candidates?.?.content?.parts?.?.text || "No reply";
 }
 
 /* ---------- ROUTES ---------- */
 
 app.get("/", (req, res) => {
-  res.json({ message: "Server running 🚀" });
+  res.json({ message: "Coding Teacher Server is running 🚀" });
 });
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
-});
-
-/* MAIN API */
 app.post("/api/ask", async (req, res) => {
   try {
     const { mode, message, topic } = req.body;
 
-    if (!mode) {
-      return res.status(400).json({ error: "Mode required" });
-    }
-
+    if (!mode) return res.status(400).json({ error: "Mode required" });
     const input = message || topic || "";
-
-    if (!input) {
-      return res.status(400).json({ error: "Message required" });
-    }
+    if (!input) return res.status(400).json({ error: "Message or Topic required" });
 
     let prompt = "";
 
-    /* ---------- MODES ---------- */
-
+    // Mode Logic
     if (mode === "chat") {
       prompt = `You are a friendly teacher. Answer clearly and shortly.\nUser: ${input}`;
-    }
-
-    else if (mode === "code") {
-      prompt = `
-You are a fun coding teacher like Duolingo.
-Teach simply step-by-step.
-
-Topic: ${input}
-
-Give:
-- short explanation
-- steps
-- small task
-`;
-    }
-
-    else if (mode === "notes") {
-      prompt = `
-Make study notes for: ${input}
-
-Include:
-- short note
-- key points
-- important questions
-- exam tips
-`;
-    }
-
-    else if (mode === "visual") {
-      prompt = `
-Create a simple visual learning card for: ${input}
-
-Include:
-- title
-- 3 bullet points
-- memory trick
-`;
-    }
-
-    else {
+    } else if (mode === "code") {
+      prompt = `You are a fun coding teacher like Duolingo. Teach simply step-by-step.\nTopic: ${input}\nGive: short explanation, steps, and a small task.`;
+    } else if (mode === "notes") {
+      prompt = `Make study notes for: ${input}\nInclude: short note, key points, important questions, and exam tips.`;
+    } else if (mode === "visual") {
+      prompt = `Create a simple visual learning card for: ${input}\nInclude: title, 3 bullet points, and a memory trick.`;
+    } else {
       return res.status(400).json({ error: "Invalid mode" });
     }
 
     const reply = await callGemini(prompt);
 
-    return res.json({
-      mode,
-      reply
-    });
+    return res.json({ mode, reply });
 
   } catch (err) {
-    return res.status(500).json({
-      error: err.message
-    });
+    console.error("Server Error:", err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -126,11 +81,12 @@ Include:
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
-    path: req.path
+    path: req.path,
+    method: req.method
   });
 });
 
 /* ---------- START SERVER ---------- */
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
+  console.log(`✅ Server spinning on port ${PORT}`);
 });
