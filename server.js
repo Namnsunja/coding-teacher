@@ -3,32 +3,17 @@ import cors from "cors";
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 const PORT = process.env.PORT || 10000;
 
 /* 🔑 PUT YOUR GEMINI KEY HERE */
 const GEMINI_API_KEY = "AIzaSyDtSEeKs_e5uHjTRQDnCd0FLVAlOw2gZIU";
-const MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-1.5-flash";
 
-/* 🧠 Simple usage limiter (per server run) */
-let requestCount = 0;
-const MAX_REQUESTS = 50;
-
-function checkLimit(res) {
-  requestCount++;
-  if (requestCount > MAX_REQUESTS) {
-    res.status(429).json({
-      error: "Limit reached. Try again later."
-    });
-    return false;
-  }
-  return true;
-}
-
-/* 🔥 Gemini function */
+/* ---------- GEMINI CALL ---------- */
 async function callGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -36,104 +21,116 @@ async function callGemini(prompt) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      contents: [
-        {
-          parts: [{ text: prompt }]
-        }
-      ]
+      contents: [{ parts: [{ text: prompt }] }]
     })
   });
 
   const data = await response.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message || "Gemini failed");
+  }
+
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No reply";
 }
 
-/* 🌐 Routes */
+/* ---------- ROUTES ---------- */
 
 app.get("/", (req, res) => {
-  res.send("Micromind AI running 🚀");
+  res.json({ message: "Server running 🚀" });
 });
 
-/* 💬 CHAT */
-app.post("/chat", async (req, res) => {
-  if (!checkLimit(res)) return;
-
-  const message = req.body.message;
-
-  const prompt = `
-You are a friendly AI teacher.
-Reply in a simple, helpful, slightly fun way.
-
-User: ${message}
-`;
-
-  const reply = await callGemini(prompt);
-  res.json({ reply });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
-/* 💻 CODING TEACHER (DUOLINGO STYLE) */
-app.post("/coding", async (req, res) => {
-  if (!checkLimit(res)) return;
+/* MAIN API */
+app.post("/api/ask", async (req, res) => {
+  try {
+    const { mode, message, topic } = req.body;
 
-  const message = req.body.message;
+    if (!mode) {
+      return res.status(400).json({ error: "Mode required" });
+    }
 
-  const prompt = `
+    const input = message || topic || "";
+
+    if (!input) {
+      return res.status(400).json({ error: "Message required" });
+    }
+
+    let prompt = "";
+
+    /* ---------- MODES ---------- */
+
+    if (mode === "chat") {
+      prompt = `You are a friendly teacher. Answer clearly and shortly.\nUser: ${input}`;
+    }
+
+    else if (mode === "code") {
+      prompt = `
 You are a fun coding teacher like Duolingo.
+Teach simply step-by-step.
 
-Teach this topic step by step:
-${message}
+Topic: ${input}
 
-Make it:
-- very easy
-- fun
-- short
-- include 1 mini quiz
+Give:
+- short explanation
+- steps
+- small task
 `;
+    }
 
-  const reply = await callGemini(prompt);
-  res.json({ reply });
-});
-
-/* 📝 NOTES */
-app.post("/notes", async (req, res) => {
-  if (!checkLimit(res)) return;
-
-  const topic = req.body.topic;
-
-  const prompt = `
-Create exam notes for: ${topic}
+    else if (mode === "notes") {
+      prompt = `
+Make study notes for: ${input}
 
 Include:
-- short explanation
-- important points
+- short note
+- key points
 - important questions
-- quick revision
+- exam tips
 `;
+    }
 
-  const reply = await callGemini(prompt);
-  res.json({ reply });
-});
-
-/* 🎨 VISUAL */
-app.post("/visual", async (req, res) => {
-  if (!checkLimit(res)) return;
-
-  const topic = req.body.topic;
-
-  const prompt = `
-Create a visual study card for: ${topic}
+    else if (mode === "visual") {
+      prompt = `
+Create a simple visual learning card for: ${input}
 
 Include:
 - title
-- main idea
-- 3 bullets
+- 3 bullet points
 - memory trick
 `;
+    }
 
-  const reply = await callGemini(prompt);
-  res.json({ reply });
+    else {
+      return res.status(400).json({ error: "Invalid mode" });
+    }
+
+    const reply = await callGemini(prompt);
+
+    return res.json({
+      mode,
+      reply
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      error: err.message
+    });
+  }
 });
 
+/* ---------- 404 HANDLER ---------- */
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Route not found",
+    path: req.path
+  });
+});
+
+/* ---------- START SERVER ---------- */
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on " + PORT);
+  console.log("Server running on port " + PORT);
 });
