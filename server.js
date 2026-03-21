@@ -1,72 +1,37 @@
-import express from "express";
-import cors from "cors";
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Root
-app.get("/", (req, res) => {
-  res.json({ message: "Micromind API running ✅" });
-});
-
-// Health
-app.get("/health", (req, res) => {
-  res.json({ status: "ok ✅" });
-});
-
-// Test
-app.get("/test", (req, res) => {
-  res.send("Test working ✅");
-});
-
-// MAIN API (WORKING)
-app.post("/api/ask", (req, res) => {
+app.post("/api/ask", async (req, res) => {
   const message = req.body.message || "";
-  const mode = (req.body.mode || "").toLowerCase();
 
-  // 🎮 Coding teacher style
-  if (mode === "code") {
-    return res.json({
-      reply: `👨‍🏫 Lesson: ${message}
+  try {
+    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer YOUR_DEEPSEEK_KEY"
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: "You are a fun coding teacher like Duolingo. Teach step-by-step with quiz and examples."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      })
+    });
 
-Step 1: Understand the concept  
-Step 2: Example  
-Step 3: Practice  
+    const data = await response.json();
 
-🎯 Quiz: What is a variable?  
-💻 Exercise: Create one variable`
+    res.json({
+      reply: data.choices?.[0]?.message?.content || "No reply"
+    });
+
+  } catch (err) {
+    res.json({
+      error: err.message
     });
   }
-
-  // 💬 Chat
-  if (mode === "chat") {
-    return res.json({
-      reply: `🤖 AI says: ${message}`
-    });
-  }
-
-  // 🎨 Visual
-  if (mode === "visual") {
-    return res.json({
-      reply: `🎨 Notes for: ${message}
-
-- Short explanation  
-- Important points  
-- Exam tip ⭐`
-    });
-  }
-
-  // Default
-  return res.json({
-    reply: "✅ API working perfectly"
-  });
 });
-
-// 404
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
-});
-
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Server running on " + PORT));
