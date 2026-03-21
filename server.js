@@ -8,7 +8,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 10000;
 
 /* 🔑 PUT YOUR GEMINI KEY HERE */
-const GEMINI_API_KEY = "PASTE_YOUR_GEMINI_KEY_HERE";
+const GEMINI_API_KEY = "AIzaSyDtSEeKs_e5uHjTRQDnCd0FLVAlOw2gZIU";
 const MODEL = "gemini-1.5-flash";
 
 /* 🧠 Simple usage limiter (per server run) */
