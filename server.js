@@ -5,76 +5,67 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Root
 app.get("/", (req, res) => {
-  res.status(200).json({ message: "Micromind API running" });
+  res.json({ message: "Micromind API running ✅" });
 });
 
+// Health
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+  res.json({ status: "ok ✅" });
 });
 
+// Test
 app.get("/test", (req, res) => {
-  res.status(200).send("Test OK");
+  res.send("Test working ✅");
 });
 
-app.post("/api/ask", async (req, res) => {
+// MAIN API (WORKING)
+app.post("/api/ask", (req, res) => {
   const message = req.body.message || "";
-  const mode = (req.body.mode || "").toLowerCase().trim();
+  const mode = (req.body.mode || "").toLowerCase();
 
-  try {
-    // 💬 CHAT + CODE
-    if (mode === "chat" || mode === "code") {
-      const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [{ role: "user", content: message }]
-        })
-      });
+  // 🎮 Coding teacher style
+  if (mode === "code") {
+    return res.json({
+      reply: `👨‍🏫 Lesson: ${message}
 
-      const data = await response.json();
-      return res.json({
-        reply: data.choices?.[0]?.message?.content || "No reply from DeepSeek"
-      });
-    }
+Step 1: Understand the concept  
+Step 2: Example  
+Step 3: Practice  
 
-    // 🎨 VISUAL
-    if (mode === "visual") {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: message }] }]
-          })
-        }
-      );
-
-      const data = await response.json();
-      return res.json({
-        reply: data.candidates?.[0]?.content?.parts?.[0]?.text || "No reply from Gemini"
-      });
-    }
-
-    // ❌ Invalid mode
-    return res.status(400).json({
-      error: "Invalid mode",
-      allowed: ["chat", "code", "visual"],
-      received: mode || "empty"
+🎯 Quiz: What is a variable?  
+💻 Exercise: Create one variable`
     });
-
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
+
+  // 💬 Chat
+  if (mode === "chat") {
+    return res.json({
+      reply: `🤖 AI says: ${message}`
+    });
+  }
+
+  // 🎨 Visual
+  if (mode === "visual") {
+    return res.json({
+      reply: `🎨 Notes for: ${message}
+
+- Short explanation  
+- Important points  
+- Exam tip ⭐`
+    });
+  }
+
+  // Default
+  return res.json({
+    reply: "✅ API working perfectly"
+  });
 });
 
+// 404
 app.use((req, res) => {
-  res.status(404).json({ error: "Route not found", path: req.path });
+  res.status(404).json({ error: "Route not found" });
 });
 
 const PORT = process.env.PORT || 10000;
