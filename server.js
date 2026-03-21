@@ -7,10 +7,15 @@ app.use(express.json({ limit: "1mb" }));
 
 const PORT = process.env.PORT || 10000;
 
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+/*
+  PUT YOUR KEYS HERE
+  Replace the text inside the quotes with your real keys.
+*/
+const DEEPSEEK_API_KEY = "sk-77e0b9fe4f5d4ee1b04bcfd623e588ee";
+const GEMINI_API_KEY = "AIzaSyDtSEeKs_e5uHjTRQDnCd0FLVAlOw2gZIU";
+
+const DEEPSEEK_MODEL = "deepseek-chat";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 function safeJsonParse(text) {
   try {
@@ -110,10 +115,6 @@ Return valid JSON only in this exact shape:
 }
 
 async function callDeepSeekJson({ systemPrompt, userPrompt, history = [] }) {
-  if (!DEEPSEEK_API_KEY) {
-    throw new Error("Missing DEEPSEEK_API_KEY");
-  }
-
   const messages = [
     { role: "system", content: systemPrompt },
     ...normalizeHistory(history),
@@ -148,10 +149,6 @@ async function callDeepSeekJson({ systemPrompt, userPrompt, history = [] }) {
 }
 
 async function callGeminiText(prompt) {
-  if (!GEMINI_API_KEY) {
-    throw new Error("Missing GEMINI_API_KEY");
-  }
-
   const url =
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
